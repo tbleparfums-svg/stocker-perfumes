@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TB le Parfums – Stock y costos</title>
+<style>
+:root{--bg:#F2EADD;--card:#FBF7EF;--ink:#3C2A21;--mut:#7a6a5e;--gold:#A8812F;--line:#DCCFB8;--ok:#2f6b3a;--bad:#a23b2a;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#17120E;--card:#241C16;--ink:#F2EADD;--mut:#b5a58f;--gold:#D8BE8A;--line:#3a2e25;--ok:#8fd19a;--bad:#f09a86;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#17120E;--card:#241C16;--ink:#F2EADD;--mut:#b5a58f;--gold:#D8BE8A;--line:#3a2e25;--ok:#8fd19a;--bad:#f09a86;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+.w{max-width:760px;margin:0 auto;padding:16px}
+h1{font:700 22px Georgia,'Times New Roman',serif;margin:0 0 2px}
+h1 em{color:var(--gold);font-weight:400}
+.sub{color:var(--mut);font-size:12px;margin-bottom:12px}
+nav{display:flex;gap:6px;margin-bottom:14px;overflow-x:auto}
+nav button{flex:1;padding:9px 6px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;font:inherit;cursor:pointer;white-space:nowrap}
+nav button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px}
+.card h3{margin:0 0 10px;font:700 16px Georgia,serif}
+.g{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
+.f{display:flex;flex-direction:column;font-size:11px;color:var(--mut);gap:3px}
+.f input{font:inherit;font-size:14px;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);width:100%}
+.k{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed var(--line)}
+.k:last-child{border:0}.k b{font-variant-numeric:tabular-nums}
+.big{font:700 24px Georgia,serif}
+.ok{color:var(--ok)}.bad{color:var(--bad)}.mut{color:var(--mut);font-size:12px}
+.row{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.b{padding:9px 12px;border-radius:8px;border:1px solid var(--gold);background:transparent;color:var(--ink);font:inherit;cursor:pointer}
+.b.p{background:var(--gold);color:#17120E;border-color:var(--gold);font-weight:600}
+.b.d{border-color:var(--bad);color:var(--bad)}
+.tag{display:inline-block;padding:2px 8px;border-radius:99px;background:var(--bg);border:1px solid var(--line);font-size:12px;margin:0 4px 4px 0}
+header{background:var(--ink);color:var(--bg);margin:-16px -16px 14px;padding:18px 16px 14px;border-bottom:3px solid var(--gold)}
+header h1{color:var(--bg)}header .sub{color:var(--gold);margin:0}
+nav button{flex:0 0 auto;padding:9px 12px}
+.card{box-shadow:0 1px 0 var(--line)}
+.bar{height:10px;background:var(--line);border-radius:99px;overflow:hidden;margin:6px 0}.bar i{display:block;height:100%;background:var(--gold)}
+textarea,select{font:inherit;width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);margin-bottom:8px}
+.ach{padding:8px 0;border-bottom:1px dashed var(--line)}.ach .t{display:flex;gap:10px;align-items:center}.ach .ic{font-size:20px;filter:grayscale(1);opacity:.4}.ach.done .ic{filter:none;opacity:1}
+</style></head>
+<body><div class="w">
+<header><h1>TB <em>le</em> Parfums</h1>
+<div class="sub">Stock, precios y ventas · <span id="st">cargando…</span></div></header>
+<nav id="nav"></nav><div id="app"></div></div>
+<script>
+const K='tbstock';
+const def={envio:14900,ml:100,dml:10,merma:10,ing:0,mt:45,mf:30,vd:0,vf:0,fr:0,g:{ing:150000,dec:30,fra:3,fin:''},
+p:[{n:'Hawas Ice',pr:36800,c:1,f:1,d:0,pf:0,pd:0},{n:'9PM Afnan',pr:31200,c:1,f:1,d:0,pf:0,pd:0},{n:'9 AM Dive',pr:31200,c:1,f:1,d:0,pf:0,pd:0}],
+i:[{n:'Atomizador vidrio 10 ml',pr:0,u:30,s:30,uso:1},{n:'Etiqueta',pr:0,u:50,s:50,uso:1},{n:'Bolsita',pr:0,u:30,s:30,uso:1},{n:'Jeringa + adaptador (kit)',pr:0,u:1,s:1,uso:0.02}]};
+let S=JSON.parse(JSON.stringify(def)),tab='res',ref=null,M={p:0,ask:'',tono:'cercano'};
+const REC={d:50,f:35};
+const rp=(c,g)=>g>=100?0:Math.ceil(c/(1-g/100)/500)*500;
+const pc=(x,c)=>{const cpf=x.pr+S.envio/c.tc;return{cpf,cd:c.nd?cpf/c.nd+c.mat:0}};
+const bar=(v,t)=>`<div class="bar"><i style="width:${Math.min(100,t?v/t*100:0)}%"></i></div>`;
+const A=[['🥇','Primer decant vendido',()=>S.vd,1],['🔟','10 decants vendidos',()=>S.vd,10],['🏅','25 decants vendidos',()=>S.vd,25],['🏆','50 decants vendidos',()=>S.vd,50],['🧪','Primer frasco fraccionado',()=>S.fr,1],['🍾','Primer frasco vendido',()=>S.vf,1],['📦','3 frascos vendidos',()=>S.vf,3],['💵','$50.000 en ventas',()=>S.ing,5e4],['💰','$100.000 en ventas',()=>S.ing,1e5],['🔁','Recuperaste lo invertido',()=>S.ing,()=>calc().inv],['🏷️','Precios cargados en todos tus perfumes',()=>S.p.filter(x=>x.pd&&x.pf).length,()=>S.p.length||1],['🗂️','Catálogo de 5 perfumes',()=>S.p.length,5]];
+const $=s=>document.querySelector(s);
+const m=v=>(v<0?'-':'')+'$'+Math.abs(Math.round(v)).toLocaleString('es-AR');
+const num=v=>parseFloat(String(v).replace(',','.'))||0;
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const r1=v=>Math.round(v*10)/10;
+function calc(){
+ const tc=S.p.reduce((a,x)=>a+x.c,0)||1;
+ const mat=S.i.reduce((a,x)=>a+(x.u?x.pr/x.u:0)*x.uso,0);
+ const nd=Math.max(Math.floor((S.ml-S.merma)/(S.dml||1)),0);
+ const inv=S.p.reduce((a,x)=>a+x.pr*x.c,0)+S.envio+S.i.reduce((a,x)=>a+x.pr,0);
+ return{tc,mat,nd,inv};}
+const fld=(l,k,v,txt)=>`<label class="f">${l}<input data-k="${k}" value="${esc(v)}" ${txt?'':'inputmode="decimal"'}></label>`;
+function render(){
+ const c=calc();
+ $('#nav').innerHTML=[['res','📊 Resumen'],['per','🧴 Perfumes'],['pre','🏷️ Precios'],['ins','🧰 Insumos'],['msg','💬 Mensajes'],['met','🎯 Metas'],['log','🏆 Logros'],['cfg','⚙️ Config']].map(([k,l])=>`<button class="${tab===k?'on':''}" onclick="tab='${k}';render()">${l}</button>`).join('');
+ let h='';
+ if(tab==='res'){
+  const stockV=S.p.reduce((a,x)=>a+x.f*x.pf+x.d*x.pd,0),rec=S.ing-c.inv;
+  const low=S.i.filter(x=>x.s<=c.nd*x.uso*1.5||x.s<=5);
+  h=`<div class="card"><h3>Caja</h3>
+  <div class="k"><span>Invertido (perfumes + envío + insumos)</span><b>${m(c.inv)}</b></div>
+  <div class="k"><span>Ventas acumuladas</span><b>${m(S.ing)}</b></div>
+  <div class="k"><span>${rec>=0?'Ganancia sobre lo invertido':'Falta recuperar'}</span><b class="big ${rec>=0?'ok':'bad'}">${m(Math.abs(rec))}</b></div>
+  <div class="k"><span>Valor del stock a precio de venta</span><b>${m(stockV)}</b></div></div>
+  <div class="card"><h3>Para recuperar la inversión</h3>${(()=>{const L=S.p.filter(x=>x.pd).map(x=>x.pd-pc(x,c).cd);if(!L.length)return '<span class="mut">Cargá precios de decant en Precios para ver este cálculo.</span>';const gm=L.reduce((a,b)=>a+b,0)/L.length,f=Math.max(0,c.inv-S.ing);return f<=0?'<b class="ok">Ya recuperaste lo invertido 🎉</b>':`<div class="big">${Math.ceil(f/gm)} decants</div><div class="mut">a una ganancia promedio de ${m(gm)} por decant</div>`})()}</div>
+  <div class="card"><h3>Stock</h3>${S.p.map(x=>`<div class="k"><span>${esc(x.n)}</span><b>${x.f} frasco(s) · ${x.d} decant(s)</b></div>`).join('')}</div>
+  <div class="card"><h3>Insumos por reponer</h3>${low.length?low.map(x=>`<span class="tag bad">${esc(x.n)}: quedan ${r1(x.s)}</span>`).join(''):'<span class="mut">Todo en orden.</span>'}</div>`;
+ }
+ if(tab==='per'){
+  h=S.p.map((x,i)=>{
+   const cpf=x.pr+S.envio/c.tc,cd=c.nd?cpf/c.nd+c.mat:0;
+   const gd=x.pd-cd,gf=x.pf-cpf,dec=c.nd*x.pd-cpf-c.nd*c.mat;
+   const be=c.nd?x.pf/c.nd+c.mat:0;
+   return `<div class="card"><h3>${esc(x.n)}</h3><div class="g">
+   ${fld('Nombre',`p.${i}.n`,x.n,1)}${fld('Precio proveedor',`p.${i}.pr`,x.pr)}${fld('Frascos comprados',`p.${i}.c`,x.c)}
+   ${fld('Frascos sin abrir',`p.${i}.f`,x.f)}${fld('Decants listos',`p.${i}.d`,x.d)}
+   ${fld('Precio venta frasco',`p.${i}.pf`,x.pf)}${fld('Precio venta decant',`p.${i}.pd`,x.pd)}</div>
+   <div style="margin-top:10px">
+   <div class="k"><span>Costo real del frasco (con envío prorrateado)</span><b>${m(cpf)}</b></div>
+   <div class="k"><span>Decants por frasco · costo c/u (perfume + insumos)</span><b>${c.nd} · ${m(cd)}</b></div>
+   <div class="k"><span>Ganancia por decant</span><b class="${gd>=0?'ok':'bad'}">${x.pd?m(gd)+' ('+Math.round(gd/x.pd*100)+'%)':'cargá el precio'}</b></div>
+   <div class="k"><span>Ganancia vendiendo el frasco entero</span><b class="${gf>=0?'ok':'bad'}">${x.pf?m(gf)+' ('+Math.round(gf/x.pf*100)+'%)':'cargá el precio'}</b></div>
+   <div class="k"><span>Ganancia decantando todo el frasco</span><b class="${dec>=0?'ok':'bad'}">${x.pd?m(dec):'—'}</b></div>
+   <div class="k"><span>Decant mínimo para igualar al frasco entero</span><b>${x.pf?m(be):'—'}</b></div>
+   ${x.pd&&x.pf?`<div class="k"><span>Conviene</span><b>${dec>gf?'Decantar':'Vender entero'}</b></div>`:''}</div>
+   <div class="row"><button class="b p" onclick="act('frac',${i})">Fraccionar 1 frasco</button>
+   <button class="b" onclick="act('vd',${i})">Vendí 1 decant</button>
+   <button class="b" onclick="act('vf',${i})">Vendí 1 frasco</button>
+   <button class="b d" onclick="act('delp',${i})">Borrar</button></div></div>`}).join('')+`<button class="b p" onclick="act('addp')">+ Agregar perfume</button>`;
+ }
+ if(tab==='ins'){
+  h=`<div class="card"><h3>Costo de insumos por decant</h3><div class="big">${m(c.mat)}</div><div class="mut">Suma de (costo unitario × uso por decant) de cada insumo.</div></div>`+
+  S.i.map((x,i)=>`<div class="card"><h3>${esc(x.n)}</h3><div class="g">
+   ${fld('Nombre',`i.${i}.n`,x.n,1)}${fld('Precio total pagado',`i.${i}.pr`,x.pr)}${fld('Unidades compradas',`i.${i}.u`,x.u)}
+   ${fld('Stock actual',`i.${i}.s`,r1(x.s))}${fld('Uso por decant',`i.${i}.uso`,x.uso)}</div>
+   <div class="k"><span>Costo unitario</span><b>${x.u?m(x.pr/x.u):'—'}</b></div>
+   <div class="row"><button class="b d" onclick="act('deli',${i})">Borrar</button></div></div>`).join('')+
+  `<button class="b p" onclick="act('addi')">+ Agregar insumo</button><p class="mut">Uso por decant: 1 si se gasta uno por decant (atomizador, etiqueta, bolsita). Para algo que dura muchos (jeringa), poné una fracción, por ejemplo 0,02 si rinde unos 50 decants.</p>`;
+ }
+ if(tab==='cfg'){
+  h=`<div class="card"><h3>Parámetros</h3><div class="g">
+  ${fld('Envío total del pedido','envio',S.envio)}${fld('ml por frasco','ml',S.ml)}${fld('ml por decant','dml',S.dml)}${fld('Merma por frasco (ml)','merma',S.merma)}${fld('Ventas acumuladas (ajuste)','ing',S.ing)}</div>
+  <p class="mut">El envío se reparte entre todos los frascos comprados. La merma es lo que se pierde al fraccionar y se suma al costo de cada decant.</p>
+  <div class="row"><button class="b d" onclick="if(confirm('¿Borrar todo y volver al inicio?')){S=JSON.parse(JSON.stringify(def));render();save()}">Reiniciar datos</button></div></div>`;
+ }
+ if(tab==='pre'){
+  h=`<div class="card"><h3>Tu ganancia deseada</h3><div class="g">${fld('% ganancia decant','mt',S.mt)}${fld('% ganancia frasco','mf',S.mf)}</div>
+  <p class="mut">Mi recomendación: <b>${REC.d}%</b> en decants (llevan trabajo, merma e insumos) y <b>${REC.f}%</b> en frascos. Es margen sobre el precio de venta y es una sugerencia mía: contrastala con los precios de MercadoLibre e Instagram. Los precios se redondean a $500.</p></div>`+
+  S.p.map((x,i)=>{const q=pc(x,c);return `<div class="card"><h3>${esc(x.n)}</h3>
+  <div class="k"><span class="mut">Precio sugerido</span><span class="mut">Tu % · Recomendado</span></div>
+  <div class="k"><span>Decant (costo ${m(q.cd)})</span><b>${m(rp(q.cd,S.mt))} · ${m(rp(q.cd,REC.d))}</b></div>
+  <div class="k"><span>Frasco (costo ${m(q.cpf)})</span><b>${m(rp(q.cpf,S.mf))} · ${m(rp(q.cpf,REC.f))}</b></div>
+  <div class="k"><span>Precio que tenés cargado</span><b>${m(x.pd)} · ${m(x.pf)}</b></div>
+  <div class="row"><button class="b" onclick="act('usar',${i},'u')">Usar mi %</button><button class="b p" onclick="act('usar',${i},'r')">Usar el recomendado</button></div></div>`}).join('');
+ }
+ if(tab==='msg'){
+  h=`<div class="card"><h3>Mensaje para un cliente (IA)</h3>
+  <label class="f">Perfume que pide<select onchange="M.p=+this.value">${S.p.map((x,i)=>`<option value="${i}" ${M.p===i?'selected':''}>${esc(x.n)}</option>`).join('')}</select></label>
+  <label class="f">Qué te dijo el cliente<textarea rows="3" oninput="M.ask=this.value" placeholder="Ej: busco algo fresco para el trabajo, ¿cuánto sale?">${esc(M.ask)}</textarea></label>
+  <label class="f">Tono<select onchange="M.tono=this.value">${['cercano','profesional','entusiasta','breve'].map(t=>`<option ${M.tono===t?'selected':''}>${t}</option>`).join('')}</select></label>
+  <button class="b p" onclick="genMsg()">Generar mensaje</button>
+  <textarea id="out" rows="7" style="margin-top:10px" placeholder="Acá aparece el mensaje. Podés editarlo."></textarea>
+  <div class="row"><button class="b" onclick="cp()">Copiar</button><button class="b" onclick="wa()">Abrir en WhatsApp</button></div>
+  <p class="mut">Usa los precios que cargaste. Si no los cargaste, dice "a consultar". La IA no afirma que sea original ni inventa notas.</p></div>`;
+ }
+ if(tab==='met'){
+  const g=S.g,dl=g.fin?Math.max(0,Math.ceil((new Date(g.fin)-new Date())/864e5)):0;
+  const L=[['Ventas ($)',S.ing,g.ing,1],['Decants vendidos',S.vd,g.dec,0],['Frascos vendidos',S.vf,g.fra,0]];
+  h=`<div class="card"><h3>Mis metas</h3><div class="g">${fld('Meta de ventas ($)','g.ing',g.ing)}${fld('Meta de decants','g.dec',g.dec)}${fld('Meta de frascos','g.fra',g.fra)}<label class="f">Fecha límite<input type="date" data-k="g.fin" value="${esc(g.fin)}"></label></div></div>`+
+  L.map(([l,v,t,mo])=>{const f=Math.max(0,t-v);return `<div class="card"><div class="k"><span>${l}</span><b>${mo?m(v)+' / '+m(t):v+' / '+t}</b></div>${bar(v,t)}<div class="mut">${f<=0?'¡Meta cumplida! 🎉':`Faltan ${mo?m(f):f}`+(dl?` · unos ${mo?m(f/dl):Math.ceil(f/dl*10)/10} por día (${dl} días)`:'')}</div></div>`}).join('');
+ }
+ if(tab==='log'){
+  const T=t=>typeof t==='function'?t():t,done=A.filter(a=>T(a[3])>0&&a[2]()>=T(a[3])).length;
+  h=`<div class="card"><h3>Logros: ${done} de ${A.length}</h3>${bar(done,A.length)}</div><div class="card">`+A.map(a=>{const t=T(a[3]),v=a[2](),ok=t>0&&v>=t;return `<div class="ach ${ok?'done':''}"><div class="t"><span class="ic">${a[0]}</span><span style="flex:1">${a[1]}</span><b>${ok?'✔':Math.round(Math.min(v,t)).toLocaleString('es-AR')+' / '+Math.round(t).toLocaleString('es-AR')}</b></div>${ok?'':bar(v,t)}</div>`}).join('')+`</div>`;
+ }
+ $('#app').innerHTML=h;
+}
+function act(t,i,i2){
+ const c=calc(),p=S.p[i];
+ if(t==='frac'&&p&&p.f>=1){p.f--;S.fr++;p.d+=c.nd;S.i.forEach(x=>x.s=Math.max(0,x.s-c.nd*x.uso))}
+ else if(t==='vd'&&p&&p.d>=1){p.d--;S.vd++;S.ing+=p.pd}
+ else if(t==='vf'&&p&&p.f>=1){p.f--;S.vf++;S.ing+=p.pf}
+ else if(t==='delp'){if(confirm('¿Borrar este perfume?'))S.p.splice(i,1);else return}
+ else if(t==='deli'){if(confirm('¿Borrar este insumo?'))S.i.splice(i,1);else return}
+ else if(t==='usar'){const q=pc(p,c);p.pd=rp(q.cd,i2==='u'?S.mt:REC.d);p.pf=rp(q.cpf,i2==='u'?S.mf:REC.f)}
+ else if(t==='addp')S.p.push({n:'Nuevo perfume',pr:0,c:1,f:1,d:0,pf:0,pd:0});
+ else if(t==='addi')S.i.push({n:'Nuevo insumo',pr:0,u:1,s:0,uso:1});
+ render();save();
+}
+document.addEventListener('change',e=>{
+ const k=e.target.dataset&&e.target.dataset.k;if(!k)return;
+ const a=k.split('.');let o=S;for(let j=0;j<a.length-1;j++)o=o[a[j]];
+ const l=a[a.length-1];o[l]=(l==='n'||l==='fin')?e.target.value:num(e.target.value);render();save();});
+async function genMsg(){
+ const o=$('#out');let sm;try{sm=await claude.use('sample')}catch(e){}
+ if(!sm){o.value='La IA no está disponible en esta vista.';return}
+ const p=S.p[M.p]||{n:''};
+ const lista=S.p.map(x=>`- ${x.n}: decant ${x.pd?m(x.pd):'a consultar'}, frasco ${x.pf?m(x.pf):'a consultar'}`).join('\n');
+ const pr=`Sos el asistente de ventas de TB le Parfums, una perfumería boutique argentina que vende frascos y decants. Redactá UN mensaje de WhatsApp en español rioplatense (voseo), tono ${M.tono}, de máximo 5 líneas, para un cliente que dice: "${M.ask||'quiere información'}". Perfume de interés: ${p.n}. Catálogo y precios:\n${lista}\nReglas: no inventes notas ni duraciones exactas, describí en términos generales (fresco, dulce, nocturno, etc.); no digas que es original ni nombres otras marcas; ofrecé el decant para probar y cerrá con una pregunta. Devolvé solo el mensaje.`;
+ o.value='Escribiendo…';
+ try{const r=await sm(pr);o.value=r.text.trim()}catch(e){o.value='No se pudo generar ('+((e&&e.code)||'error')+').'}
+}
+async function cp(){const o=$('#out');o.select();try{await navigator.clipboard.writeText(o.value)}catch(e){document.execCommand('copy')}}
+function wa(){window.open('https://wa.me/?text='+encodeURIComponent($('#out').value),'_blank')}
+let tm;
+function save(){clearTimeout(tm);tm=setTimeout(async()=>{
+ const j=JSON.stringify(S);try{localStorage.setItem(K,j)}catch(e){}
+ if(ref){try{await ref.set({json:j});$('#st').textContent='guardado en tu cuenta'}catch(e){$('#st').textContent='guardado solo en este navegador'}}},400);}
+async function init(){
+ try{const l=localStorage.getItem(K);if(l)S=Object.assign(JSON.parse(JSON.stringify(def)),JSON.parse(l))}catch(e){}
+ render();$('#st').textContent='guardado solo en este navegador';
+ try{const [d,u]=await Promise.all([claude.use('db'),claude.use('user')]);
+  if(d&&u){const id=await u.id();ref=d.collection('data/users/'+id).doc('stock');
+   const s=await ref.get();
+   if(s.exists&&s.data().json){S=Object.assign(JSON.parse(JSON.stringify(def)),JSON.parse(s.data().json));render()}else{save()}
+   $('#st').textContent='guardado en tu cuenta';}}catch(e){}
+}
+init();
+</script></body></html>
